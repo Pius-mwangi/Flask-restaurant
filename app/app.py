@@ -17,7 +17,7 @@ db.init_app(app)
 
 def validate_restaurant_pizza_data(data):
     errors = []
-    # Implement your data validation logic here
+   
     # Example: Check if 'pizza_id', 'restaurant_id', and 'price' are present and valid
     if 'pizza_id' not in data or 'restaurant_id' not in data or 'price' not in data:
         errors.append("Missing required fields: pizza_id, restaurant_id, price")
@@ -50,7 +50,7 @@ def get_restaurant(id):
     restaurant = Restaurant.query.get(id)
     if restaurant:
         pizza_list = []
-        for restaurant_pizza in restaurant.pizzas:  # Update this line
+        for restaurant_pizza in restaurant.pizzas: 
             pizza = Pizza.query.get(restaurant_pizza.pizza_id)
             if pizza:
                 pizza_list.append({
