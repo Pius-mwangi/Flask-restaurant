@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import validates
@@ -45,8 +45,7 @@ class Pizza(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'address': self.address,
-            'pizzas': [pizza.serialize() for pizza in self.pizzas]
+            'ingredients': self.ingredients,
         }
 
 class RestaurantPizza(db.Model):
@@ -74,5 +73,3 @@ class RestaurantPizza(db.Model):
     pizza = db.relationship('Pizza', back_populates='restaurants')
     restaurant = db.relationship('Restaurant', back_populates='pizzas')
 
-if __name__ == '__main__':
-    app.run(debug=True)

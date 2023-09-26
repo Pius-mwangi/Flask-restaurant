@@ -13,20 +13,19 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
-# Add your models here (Restaurant, Pizza, RestaurantPizza)
 
-# Validation function for RestaurantPizza
+
 def validate_restaurant_pizza_data(data):
     errors = []
-
-    # Validate price
-    price = data.get('price')
-    if price is None or not (1 <= price <= 30):
-        errors.append("Price must be between 1 and 30")
-
+    # Implement your data validation logic here
+    # Example: Check if 'pizza_id', 'restaurant_id', and 'price' are present and valid
+    if 'pizza_id' not in data or 'restaurant_id' not in data or 'price' not in data:
+        errors.append("Missing required fields: pizza_id, restaurant_id, price")
+    # Additional validation checks can be added
     return errors
 
 # Routes
+
 
 # GET /restaurants
 @app.route('/restaurants', methods=['GET'])
@@ -39,7 +38,11 @@ def get_restaurants():
             "name": restaurant.name,
             "address": restaurant.address
         })
-    return jsonify(restaurant_list)
+
+    # Create a custom response with JSON data and a 200 (OK) status code
+    response = make_response(jsonify(restaurant_list), 200)
+    return response
+
 
 # GET /restaurants/:id
 @app.route('/restaurants/<int:id>', methods=['GET'])
@@ -47,7 +50,7 @@ def get_restaurant(id):
     restaurant = Restaurant.query.get(id)
     if restaurant:
         pizza_list = []
-        for restaurant_pizza in restaurant.restaurant_pizzas:
+        for restaurant_pizza in restaurant.pizzas:  # Update this line
             pizza = Pizza.query.get(restaurant_pizza.pizza_id)
             if pizza:
                 pizza_list.append({
@@ -69,6 +72,11 @@ def get_restaurant(id):
 def delete_restaurant(id):
     restaurant = Restaurant.query.get(id)
     if restaurant:
+        # Log restaurant and associated pizza IDs
+        print(f"Deleting Restaurant ID: {restaurant.id}")
+        for restaurant_pizza in restaurant.restaurant_pizzas:
+            print(f"Deleting RestaurantPizza ID: {restaurant_pizza.id}")
+
         # Check if there are associated RestaurantPizzas and delete them
         for restaurant_pizza in restaurant.restaurant_pizzas:
             db.session.delete(restaurant_pizza)
@@ -79,6 +87,7 @@ def delete_restaurant(id):
         return "", 204
     else:
         return jsonify({"error": "Restaurant not found"}), 404
+
 
 # GET /pizzas
 @app.route('/pizzas', methods=['GET'])
@@ -97,11 +106,13 @@ def get_pizzas():
 @app.route('/restaurant_pizzas', methods=['POST'])
 def create_restaurant_pizza():
     data = request.json
-    errors = validate_restaurant_pizza_data(data)
 
+    # Validate the JSON data
+    errors = validate_restaurant_pizza_data(data)
     if errors:
         return jsonify({"errors": errors}), 400
 
+    # Extract data from the JSON
     pizza_id = data.get('pizza_id')
     restaurant_id = data.get('restaurant_id')
     price = data.get('price')
@@ -110,8 +121,10 @@ def create_restaurant_pizza():
     pizza = Pizza.query.get(pizza_id)
     restaurant = Restaurant.query.get(restaurant_id)
 
-    if not pizza or not restaurant:
-        return jsonify({"error": "Pizza or Restaurant not found"}), 404
+    if not pizza:
+        return jsonify({"error": "Pizza not found"}), 404
+    if not restaurant:
+        return jsonify({"error": "Restaurant not found"}), 404
 
     # Create RestaurantPizza
     restaurant_pizza = RestaurantPizza(
@@ -122,14 +135,16 @@ def create_restaurant_pizza():
 
     db.session.add(restaurant_pizza)
     db.session.commit()
-    
+
+    # Return a response with the newly created RestaurantPizza's details
     return jsonify({
-        "id": pizza.id,
-        "name": pizza.name,
-        "ingredients": pizza.ingredients
+        "id": restaurant_pizza.id,
+        "pizza_id": pizza.id,
+        "restaurant_id": restaurant.id,
+        "price": restaurant_pizza.price
     }), 201
 
 if __name__ == '__main__':
-    app.run(port=5555)
+    app.run(debug=True, port=5555)
 
 
